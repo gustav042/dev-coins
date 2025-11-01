@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Devs Coins 🪙</title>
+    <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+            rel="stylesheet"
+    >
+    <style>
+        * {margin:0;padding:0;box-sizing:border-box;}
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.2em;
+        }
+        .subtitle {
+            color: rgba(255,255,255,0.9);
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        .batata-quente-button {
+            display:block;
+            margin:0 auto 25px;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%);
+            color:white;
+            border:none;
+            border-radius:40px;
+            padding:12px 25px;
+            font-size:1.1em;
+            font-weight:bold;
+            cursor:pointer;
+            transition:.3s;
+        }
+        .batata-quente-button:hover {transform:translateY(-2px);}
+
+        .devs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        .dev-card {
+            background:white;
+            border-radius:12px;
+            padding:20px;
+            box-shadow:0 6px 20px rgba(0,0,0,.2);
+            text-align:center;
+            transition:.3s;
+        }
+        .dev-card:hover {transform:translateY(-4px);}
+        .dev-name {font-size:1.4em;font-weight:bold;color:#333;}
+        .coins {font-size:2em;color:#667eea;margin:10px 0;}
+        .batata {font-size:1.6em;margin-bottom:8px;}
+        .btn {cursor:pointer;border:none;border-radius:8px;padding:8px 14px;font-weight:bold;}
+        .btn-batata {
+            background:linear-gradient(135deg,#ff6b6b,#ff8e53);
+            color:white;width:100%;margin-top:10px;
+        }
+        .btn-pay {
+            background:#28a745;color:white;width:100%;margin-top:10px;
+        }
+        .btn-delete {background:#ff6b6b;color:white;margin-top:10px;}
+        .floating-btn {
+            position:fixed;
+            bottom:25px;right:25px;
+            background:#667eea;
+            color:white;
+            border:none;
+            border-radius:50%;
+            width:60px;height:60px;
+            font-size:30px;
+            cursor:pointer;
+            box-shadow:0 6px 20px rgba(0,0,0,.3);
+            transition:.3s;
+        }
+        .floating-btn:hover {transform:rotate(90deg);}
+        .modal {
+            display:none;
+            position:fixed;
+            top:0;left:0;width:100%;height:100%;
+            background:rgba(0,0,0,0.5);
+            justify-content:center;align-items:center;
+        }
+        .modal-content {
+            background:white;padding:25px;border-radius:10px;
+            width:90%;max-width:400px;text-align:center;
+        }
+        input {
+            width:100%;
+            padding:10px;
+            border:2px solid #ddd;
+            border-radius:8px;
+            margin-bottom:10px;
+            font-size:1em;
+        }
+        .btn-primary {
+            background:#667eea;color:white;width:100%;
+            padding:10px;font-size:1em;
+        }
+        .success,.error {
+            text-align:center;
+            color:white;
+            padding:10px;border-radius:6px;
+            margin:15px auto;width:fit-content;
+        }
+        .success{background:#28a745;}
+        .error{background:#ff6b6b;}
+    </style>
+</head>
+<body>
+
+<h1>💰 Devs Coins</h1>
+<p class="subtitle">Pague e receba🪙 entre devs</p>
+
+<button class="batata-quente-button" onclick="verificarBatataQuente()">🥔 Quem está com a batata quente?</button>
+
+<div id="message"></div>
+<div id="batataQuenteResult"></div>
+<div id="devsContainer"><div style="color:white;text-align:center;">Carregando devs...</div></div>
+
+<!-- Botão flutuante -->
+<button class="floating-btn" onclick="abrirModal()">＋</button>
+<!-- Modal adicionar dev -->
+<div id="modalAddDev" class="modal">
+    <div class="modal-content">
+        <h2>Adicionar Dev</h2>
+        <input type="text" id="newDevName" placeholder="Nome do dev">
+        <input type="number" id="newDevCoins" placeholder="Moedas iniciais" value="5" min="0">
+        <button class="btn-primary" onclick="adicionarDev()">Salvar</button>
+        <button class="btn" style="margin-top:10px" onclick="fecharModal()">Cancelar</button>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    const API_URL = 'http://localhost:8080/api/devs';
+    let devs = [];
+    function mostrarErro(msg){ mensagem(`<div class="error">${msg}</div>`); }
+    function mostrarSucesso(msg){ mensagem(`<div class="success">${msg}</div>`); }
+    function mensagem(html){
+        const m=document.getElementById('message');
+        m.innerHTML=html;
+        setTimeout(()=>m.innerHTML='',3000);
+    }
+    carregarDevs();
+
+    async function carregarDevs(){
+        try{
+            const resp = await fetch(API_URL);
+            if(!resp.ok) throw new Error();
+            devs = await resp.json();
+            renderizarDevs(devs);
+        }catch(e){
+            mostrarErro('Erro ao conectar com o servidor.');
+        }
+    }
+
+    function renderizarDevs(devsList){
+        const container = document.getElementById('devsContainer');
+        if(!devsList.length){
+            container.innerHTML = `<div style="text-align:center;color:white;">Nenhum dev cadastrado 🧑‍💻</div>`;
+            return;
+        }
+        container.innerHTML = '<div class="devs-grid">'+devsList.map(d=>`
+            <div class="dev-card">
+                <div class="dev-name">${d.nome}</div>
+                <div class="coins">🪙 ${d.moedas}</div>
+                <div class="batata">🥔 ${d.batataQuente}</div>
+                <button class="btn btn-batata" onclick="incrementarBatata(${d.id})">+1 Batata</button>
+                <button class="btn btn-pay" onclick="abrirPagamento(${d.id})">💰 Pagar</button>
+                <button class="btn btn-delete" onclick="deletarDev(${d.id})">🗑️</button>
+            </div>
+        `).join('')+'</div>';
+    }
+
+    async function adicionarDev(){
+        const nome = document.getElementById('newDevName').value.trim();
+        const moedas = parseInt(document.getElementById('newDevCoins').value)||0;
+        if(!nome) return mostrarErro('Digite o nome');
+        try{
+            const r = await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome,moedas})});
+            if(!r.ok) throw new Error();
+            mostrarSucesso('Dev adicionado!');
+            fecharModal();carregarDevs();
+        }catch(e){mostrarErro('Erro ao adicionar dev');}
+    }
+
+    function abrirModal() {
+        document.getElementById('modalAddDev').style.display = 'flex';
+    }
+
+    function fecharModal() {
+        document.getElementById('modalAddDev').style.display = 'none';
+    }
+
+    async function incrementarBatata(id){
+        try{
+            const r = await fetch(`${API_URL}/${id}/batata-quente`,{method:'POST'});
+            if(!r.ok) throw new Error();
+            mostrarSucesso('Batata +1!');
+            carregarDevs();
+        }catch(e){mostrarErro('Erro ao incrementar');}
+    }
+
+    async function verificarBatataQuente(){
+        try{
+            const r = await fetch(`${API_URL}/batata-quente/menor`);
+            if(!r.ok) throw new Error();
+            const d = await r.json();
+            document.getElementById('batataQuenteResult').innerHTML=`
+                <div class="success">🥔 ${d.nome} está com a batata quente (${d.batataQuente})</div>
+            `;
+            setTimeout(()=>document.getElementById('batataQuenteResult').innerHTML='',4000);
+        }catch(e){mostrarErro('Erro ao verificar');}
+    }
+
+    async function deletarDev(id){
+        const dev = devs.find(x=>x.id===id);
+        if(!confirm(`Deletar ${dev.nome}?`))return;
+        try{
+            const r = await fetch(`${API_URL}/${id}`,{method:'DELETE'});
+            if(!r.ok) throw new Error();
+            mostrarSucesso(`${dev.nome} removido`);
+            carregarDevs();
+        }catch(e){mostrarErro('Erro ao deletar');}
+    }
+
+    function abrirPagamento(devId) {
+    // Encontra o dev que vai RECEBER o pagamento
+    const devRecebedor = devs.find(d => d.id === devId);
+    if (!devRecebedor) return;
+
+    // Remove modal anterior, se houver
+    const oldModal = document.getElementById('modalPagamento');
+    if (oldModal) oldModal.remove();
+
+    // Cria opções para o select (todos os outros devs)
+    const opcoes = devs
+        .filter(d => d.id !== devId)
+        .map(d => `<option value="${d.id}">${d.nome} (${d.moedas} 🪙)</option>`)
+        .join('');
+
+    // Monta o HTML do modal
+    const modalHTML = `
+        <div class="modal fade" id="modalPagamento" tabindex="-1" aria-labelledby="modalPagamentoLabel" aria-hidden="true">
+          <div class="modal-dialog">
+            <div class="modal-content rounded-4 shadow">
+              <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="modalPagamentoLabel">💰 Pagamento para ${devRecebedor.nome}</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+              </div>
+              <div class="modal-body">
+                <label class="form-label">Selecione quem vai pagar</label>
+                <select id="devPagador" class="form-select">
+                    <option value="">-- Escolha o dev pagador --</option>
+                    ${opcoes}
+                </select>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" id="confirmarPagamento">Confirmar Pagamento</button>
+              </div>
+            </div>
+          </div>
+        </div>
+    `;
+
+    // Adiciona o modal ao body
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    // Inicializa e mostra o modal com Bootstrap
+    const modal = new bootstrap.Modal(document.getElementById('modalPagamento'));
+    modal.show();
+
+    // Evento do botão "Confirmar"
+    document.getElementById('confirmarPagamento').addEventListener('click', async () => {
+        const pagadorId = parseInt(document.getElementById('devPagador').value);
+        if (!pagadorId) {
+            alert('Selecione quem vai pagar!');
+            return;
+        }
+
+        const devPagador = devs.find(d => d.id === pagadorId);
+        if (!devPagador) return;
+
+        if (devPagador.moedas <= 0) {
+            alert(`${devPagador.nome} não tem moedas suficientes!`);
+            return;
+        }
+
+        // Atualiza saldos localmente
+        devPagador.moedas--;
+        devRecebedor.moedas++;
+
+        // Atualiza na interface
+        renderizarDevs(devs);
+        modal.hide();
+
+        // Mensagem de feedback visual
+        mostrarSucesso(`${devPagador.nome} pagou 1 moeda para ${devRecebedor.nome}!`);
+    });
+}
+
+
+</script>
+</body>
+</html>
+
