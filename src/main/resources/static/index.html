@@ -143,54 +143,79 @@
 <script>
     const API_URL = '/api/devs';
     let devs = [];
-    function mostrarErro(msg){ mensagem(`<div class="error">${msg}</div>`); }
-    function mostrarSucesso(msg){ mensagem(`<div class="success">${msg}</div>`); }
-    function mensagem(html){
-        const m=document.getElementById('message');
-        m.innerHTML=html;
-        setTimeout(()=>m.innerHTML='',3000);
+
+    function mostrarErro(mensagemTexto) {
+        exibirMensagem(`<div class="error">${mensagemTexto}</div>`);
     }
+
+    function mostrarSucesso(mensagemTexto) {
+        exibirMensagem(`<div class="success">${mensagemTexto}</div>`);
+    }
+
+    function exibirMensagem(htmlMensagem) {
+        const elementoMensagem = document.getElementById('message');
+        elementoMensagem.innerHTML = htmlMensagem;
+        setTimeout(() => elementoMensagem.innerHTML = '', 3000);
+    }
+
     carregarDevs();
 
-    async function carregarDevs(){
-        try{
-            const resp = await fetch(API_URL);
-            if(!resp.ok) throw new Error();
-            devs = await resp.json();
+    async function carregarDevs() {
+        try {
+            const resposta = await fetch(API_URL);
+            if (!resposta.ok) throw new Error();
+            devs = await resposta.json();
             renderizarDevs(devs);
-        }catch(e){
+        } catch (erro) {
             mostrarErro('Erro ao conectar com o servidor.');
         }
     }
 
-    function renderizarDevs(devsList){
+    function renderizarDevs(listaDevs) {
         const container = document.getElementById('devsContainer');
-        if(!devsList.length){
+        if (!listaDevs.length) {
             container.innerHTML = `<div style="text-align:center;color:white;">Nenhum dev cadastrado 🧑‍💻</div>`;
             return;
         }
-        container.innerHTML = '<div class="devs-grid">'+devsList.map(d=>`
-            <div class="dev-card">
-                <div class="dev-name">${d.nome}</div>
-                <div class="coins">🪙 ${d.moedas}</div>
-                <div class="batata">🥔 ${d.batataQuente}</div>
-                <button class="btn btn-batata" onclick="incrementarBatata(${d.id})">+1 Batata</button>
-                <button class="btn btn-pay" onclick="abrirPagamento(${d.id})">💰 Pagar</button>
-                <button class="btn btn-delete" onclick="deletarDev(${d.id})">🗑️</button>
-            </div>
-        `).join('')+'</div>';
+
+        container.innerHTML = `
+            <div class="devs-grid">
+                ${listaDevs.map(dev =>
+                    `<div class="dev-card">
+                        <div class="dev-name">${dev.nome}</div>
+                        <div class="coins">🪙 ${dev.moedas}</div>
+                        <div class="batata">🥔 ${dev.batataQuente}</div>
+                        <button class="btn btn-batata" onclick="incrementarBatata(${dev.id})">+1 Batata</button>
+                        <button class="btn btn-pay" onclick="abrirPagamento(${dev.id})">💰 Pagar</button>
+                        <button class="btn btn-delete" onclick="deletarDev(${dev.id})">🗑️</button>
+                    </div>`
+                ).join('')}
+            </div>`;
     }
 
-    async function adicionarDev(){
+    async function adicionarDev() {
         const nome = document.getElementById('newDevName').value.trim();
-        const moedas = parseInt(document.getElementById('newDevCoins').value)||0;
-        if(!nome) return mostrarErro('Digite o nome');
-        try{
-            const r = await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome,moedas})});
-            if(!r.ok) throw new Error();
-            mostrarSucesso('Dev adicionado!');
-            fecharModal();carregarDevs();
-        }catch(e){mostrarErro('Erro ao adicionar dev');}
+        const moedas = parseInt(document.getElementById('newDevCoins').value) || 0;
+
+        if (!nome) {
+            return mostrarErro('Digite o nome do dev');
+        }
+
+        try {
+            const resposta = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nome, moedas })
+            });
+
+            if (!resposta.ok) throw new Error();
+
+            mostrarSucesso('Dev adicionado com sucesso!');
+            fecharModal();
+            carregarDevs();
+        } catch (erro) {
+            mostrarErro('Erro ao adicionar dev');
+        }
     }
 
     function abrirModal() {
@@ -201,116 +226,138 @@
         document.getElementById('modalAddDev').style.display = 'none';
     }
 
-    async function incrementarBatata(id){
-        try{
-            const r = await fetch(`${API_URL}/${id}/batata-quente`,{method:'POST'});
-            if(!r.ok) throw new Error();
+    async function incrementarBatata(devId) {
+        try {
+            const resposta = await fetch(`${API_URL}/${devId}/batata-quente`, { method: 'POST' });
+            if (!resposta.ok) throw new Error();
             mostrarSucesso('Batata +1!');
             carregarDevs();
-        }catch(e){mostrarErro('Erro ao incrementar');}
+        } catch (erro) {
+            mostrarErro('Erro ao incrementar batata');
+        }
     }
 
-    async function verificarBatataQuente(){
-        try{
-            const r = await fetch(`${API_URL}/batata-quente/menor`);
-            if(!r.ok) throw new Error();
-            const d = await r.json();
-            document.getElementById('batataQuenteResult').innerHTML=`
-                <div class="success">🥔 ${d.nome} está com a batata quente (${d.batataQuente})</div>
+    async function verificarBatataQuente() {
+        try {
+            const resposta = await fetch(`${API_URL}/batata-quente/menor`);
+            if (!resposta.ok) throw new Error();
+
+            const devComMenosBatatas = await resposta.json();
+
+            document.getElementById('batataQuenteResult').innerHTML = `
+                <div class="success">🥔 ${devComMenosBatatas.nome} está com a batata quente (${devComMenosBatatas.batataQuente})</div>
             `;
-            setTimeout(()=>document.getElementById('batataQuenteResult').innerHTML='',4000);
-        }catch(e){mostrarErro('Erro ao verificar');}
+
+            setTimeout(() => document.getElementById('batataQuenteResult').innerHTML = '', 4000);
+        } catch (erro) {
+            mostrarErro('Erro ao verificar quem está com a batata quente');
+        }
     }
 
-    async function deletarDev(id){
-        const dev = devs.find(x=>x.id===id);
-        if(!confirm(`Deletar ${dev.nome}?`))return;
-        try{
-            const r = await fetch(`${API_URL}/${id}`,{method:'DELETE'});
-            if(!r.ok) throw new Error();
-            mostrarSucesso(`${dev.nome} removido`);
+    async function deletarDev(devId) {
+        const devEncontrado = devs.find(dev => dev.id === devId);
+        if (!confirm(`Deletar ${devEncontrado.nome}?`)) return;
+
+        try {
+            const resposta = await fetch(`${API_URL}/${devId}`, { method: 'DELETE' });
+            if (!resposta.ok) throw new Error();
+
+            mostrarSucesso(`${devEncontrado.nome} removido com sucesso`);
             carregarDevs();
-        }catch(e){mostrarErro('Erro ao deletar');}
+        } catch (erro) {
+            mostrarErro('Erro ao deletar dev');
+        }
     }
 
-    function abrirPagamento(devId) {
-    // Encontra o dev que vai RECEBER o pagamento
-    const devRecebedor = devs.find(d => d.id === devId);
-    if (!devRecebedor) return;
+    function abrirPagamento(devIdRecebedor) {
+        const devRecebedor = devs.find(dev => dev.id === devIdRecebedor);
+        if (!devRecebedor) return;
 
-    // Remove modal anterior, se houver
-    const oldModal = document.getElementById('modalPagamento');
-    if (oldModal) oldModal.remove();
+        removerModalPagamentoExistente();
+        criarModalPagamento(devRecebedor);
+        inicializarModalPagamento(devRecebedor);
+    }
 
-    // Cria opções para o select (todos os outros devs)
-    const opcoes = devs
-        .filter(d => d.id !== devId)
-        .map(d => `<option value="${d.id}">${d.nome} (${d.moedas} 🪙)</option>`)
-        .join('');
+    function removerModalPagamentoExistente() {
+        const modalAntigo = document.getElementById('modalPagamento');
+        if (modalAntigo) modalAntigo.remove();
+    }
 
-    // Monta o HTML do modal
-    const modalHTML = `
-        <div class="modal fade" id="modalPagamento" tabindex="-1" aria-labelledby="modalPagamentoLabel" aria-hidden="true">
-          <div class="modal-dialog">
-            <div class="modal-content rounded-4 shadow">
-              <div class="modal-header bg-success text-white">
-                <h5 class="modal-title" id="modalPagamentoLabel">💰 Pagamento para ${devRecebedor.nome}</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
-              </div>
-              <div class="modal-body">
-                <label class="form-label">Selecione quem vai pagar</label>
-                <select id="devPagador" class="form-select">
-                    <option value="">-- Escolha o dev pagador --</option>
-                    ${opcoes}
-                </select>
-              </div>
-              <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-success" id="confirmarPagamento">Confirmar Pagamento</button>
+    function criarModalPagamento(devRecebedor) {
+        const opcoesDevsPagadores = devs
+            .filter(dev => dev.id !== devRecebedor.id)
+            .map(dev => `<option value="${dev.id}">${dev.nome} (${dev.moedas} 🪙)</option>`)
+            .join('');
+
+        const conteudoModal = `
+            <div class="modal fade" id="modalPagamento" tabindex="-1" aria-labelledby="modalPagamentoLabel" aria-hidden="true">
+              <div class="modal-dialog">
+                <div class="modal-content rounded-4 shadow">
+                  <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="modalPagamentoLabel">💰 Pagamento para ${devRecebedor.nome}</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                  </div>
+                  <div class="modal-body">
+                    <label class="form-label">Selecione quem vai pagar</label>
+                    <select id="seletorDevPagador" class="form-select">
+                        <option value="">-- Escolha o dev pagador --</option>
+                        ${opcoesDevsPagadores}
+                    </select>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-success" id="botaoConfirmarPagamento">Confirmar Pagamento</button>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
-    `;
+        `;
 
-    // Adiciona o modal ao body
-    document.body.insertAdjacentHTML('beforeend', modalHTML);
+        document.body.insertAdjacentHTML('beforeend', conteudoModal);
+    }
 
-    // Inicializa e mostra o modal com Bootstrap
-    const modal = new bootstrap.Modal(document.getElementById('modalPagamento'));
-    modal.show();
+    function inicializarModalPagamento(devRecebedor) {
+        const elementoModal = document.getElementById('modalPagamento');
+        const modalBootstrap = new bootstrap.Modal(elementoModal);
+        modalBootstrap.show();
 
-    // Evento do botão "Confirmar"
-    document.getElementById('confirmarPagamento').addEventListener('click', async () => {
-        const pagadorId = parseInt(document.getElementById('devPagador').value);
-        if (!pagadorId) {
+        document.getElementById('botaoConfirmarPagamento').addEventListener('click', () => {
+            confirmarPagamentoEntreDevs(modalBootstrap, devRecebedor);
+        });
+    }
+
+    async function confirmarPagamentoEntreDevs(modalBootstrap, devRecebedor) {
+        const identificadorDevPagador = parseInt(document.getElementById('seletorDevPagador').value);
+
+        if (!identificadorDevPagador) {
             alert('Selecione quem vai pagar!');
             return;
         }
 
-        const devPagador = devs.find(d => d.id === pagadorId);
+        const devPagador = devs.find(dev => dev.id === identificadorDevPagador);
         if (!devPagador) return;
 
-        if (devPagador.moedas <= 0) {
-            alert(`${devPagador.nome} não tem moedas suficientes!`);
-            return;
+        try {
+            const resposta = await fetch(`${API_URL}/transferir`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    devPagadorId: devPagador.id,
+                    devRecebedorId: devRecebedor.id
+                })
+            });
+
+            if (!resposta.ok) throw new Error();
+
+            mostrarSucesso(`${devPagador.nome} pagou 1 moeda para ${devRecebedor.nome}!`);
+            modalBootstrap.hide();
+            carregarDevs();
+        } catch (erro) {
+            mostrarErro('Erro ao realizar o pagamento da moeda.');
         }
-
-        // Atualiza saldos localmente
-        devPagador.moedas--;
-        devRecebedor.moedas++;
-
-        // Atualiza na interface
-        renderizarDevs(devs);
-        modal.hide();
-
-        // Mensagem de feedback visual
-        mostrarSucesso(`${devPagador.nome} pagou 1 moeda para ${devRecebedor.nome}!`);
-    });
-}
-
-
+    }
 </script>
+
 </body>
 </html>
 
