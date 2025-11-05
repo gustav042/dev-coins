@@ -177,6 +177,7 @@
             container.innerHTML = `<div style="text-align:center;color:white;">Nenhum dev cadastrado 🧑‍💻</div>`;
             return;
         }
+        listaDevs.sort((a, b) => a.id.localeCompare(b.id));
 
         container.innerHTML = `
             <div class="devs-grid">
