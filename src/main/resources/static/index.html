@@ -172,12 +172,13 @@
     }
 
     function renderizarDevs(listaDevs) {
+    debugger;
         const container = document.getElementById('devsContainer');
         if (!listaDevs.length) {
             container.innerHTML = `<div style="text-align:center;color:white;">Nenhum dev cadastrado 🧑‍💻</div>`;
             return;
         }
-        listaDevs.sort((a, b) => a.id.localeCompare(b.id));
+        listaDevs.sort((a, b) => a.id - b.id);
 
         container.innerHTML = `
             <div class="devs-grid">
