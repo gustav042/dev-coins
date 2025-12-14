@@ -83,6 +83,10 @@ public class DevController {
             return ResponseEntity.badRequest().body("Um dev não pode pagar a si mesmo");
         }
 
+        if (pagador.getMoedas() == 0) {
+            return ResponseEntity.badRequest().body("Dev pagador não possui moedas");
+        }
+
         // Realizar transferência
         pagador.removerMoeda();
         recebedor.adicionarMoeda();

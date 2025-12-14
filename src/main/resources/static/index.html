@@ -172,7 +172,6 @@
     }
 
     function renderizarDevs(listaDevs) {
-    debugger;
         const container = document.getElementById('devsContainer');
         if (!listaDevs.length) {
             container.innerHTML = `<div style="text-align:center;color:white;">Nenhum dev cadastrado 🧑‍💻</div>`;
@@ -329,7 +328,9 @@
     }
 
     async function confirmarPagamentoEntreDevs(modalBootstrap, devRecebedor) {
-        const identificadorDevPagador = parseInt(document.getElementById('seletorDevPagador').value);
+        const identificadorDevPagador = parseInt(
+            document.getElementById('seletorDevPagador').value
+        );
 
         if (!identificadorDevPagador) {
             alert('Selecione quem vai pagar!');
@@ -348,16 +349,23 @@
                     devRecebedorId: devRecebedor.id
                 })
             });
+            if (!resposta.ok) {
+                const mensagemErro = await resposta.text();
+                throw new Error(mensagemErro);
+            }
 
-            if (!resposta.ok) throw new Error();
+            const mensagemSucesso = await resposta.text();
 
-            mostrarSucesso(`${devPagador.nome} pagou 1 moeda para ${devRecebedor.nome}!`);
+            mostrarSucesso(mensagemSucesso);
             modalBootstrap.hide();
             carregarDevs();
+
         } catch (erro) {
-            mostrarErro('Erro ao realizar o pagamento da moeda.');
+            modalBootstrap.hide();
+            mostrarErro(erro.message || 'Erro inesperado');
         }
     }
+
 </script>
 
 </body>
