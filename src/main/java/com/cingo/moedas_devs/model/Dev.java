@@ -2,8 +2,8 @@ package com.cingo.moedas_devs.model;
 
 import jakarta.persistence.*;
 
-@Entity // Indica que esta classe é uma entidade do banco de dados
-@Table(name = "devs") // Nome da tabela no banco
+@Entity
+@Table(name = "devs")
 public class Dev {
 
     @Id
@@ -21,7 +21,7 @@ public class Dev {
 
     public Dev() {
         this.moedas = 0;
-        this.batataQuente = 0; // Todo dev começa com 0 batata quente
+        this.batataQuente = 0;
     }
 
     public Dev(String nome, Integer moedas) {

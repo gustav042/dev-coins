@@ -1,9 +1,5 @@
 package com.cingo.moedas_devs.dto;
 
-/**
- * DTO (Data Transfer Object) - Objeto usado para transferir dados
- * Usado para receber a quantidade de moedas a adicionar/remover
- */
 public class AtualizarMoedasRequest {
 
     private Integer quantidade;
